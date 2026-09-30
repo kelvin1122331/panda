@@ -324,16 +324,17 @@
 
   // All landing-page Play Panda buttons activate the same widget.
   document.querySelectorAll('.js-play').forEach(button => button.addEventListener('click', () => activatePanda(true)));
-  document.getElementById('copy-code').addEventListener('click', async () => {
+  const copyCodeButton = document.getElementById('copy-code');
+  if (copyCodeButton) copyCodeButton.addEventListener('click', async () => {
     const snippet = '<script src="/widget.js" data-position="bottom-right" data-theme="light"></script>';
     try { await navigator.clipboard.writeText(snippet); } catch { /* Clipboard can be blocked in a file preview. */ }
-    document.getElementById('copy-code').innerHTML = 'Copied <span>✓</span>';
-    toast.classList.add('show');
-    setTimeout(() => { toast.classList.remove('show'); document.getElementById('copy-code').innerHTML = 'Copy code <span>⧉</span>'; }, 1800);
+    copyCodeButton.innerHTML = 'Copied <span>✓</span>';
+    if (toast) toast.classList.add('show');
+    setTimeout(() => { if (toast) toast.classList.remove('show'); copyCodeButton.innerHTML = 'Copy code <span>⧉</span>'; }, 1800);
   });
 
   const mobileMenu = document.querySelector('.mobile-menu');
-  mobileMenu.addEventListener('click', () => {
+  if (mobileMenu) mobileMenu.addEventListener('click', () => {
     document.querySelector('.main-nav').classList.toggle('mobile-open');
     mobileMenu.classList.toggle('open');
   });

@@ -22,7 +22,13 @@ Buka `http://localhost:4173`.
 
 Struktur utama:
 
-- `index.html` — halaman website dan visual landing page.
-- `styles.css` — seluruh sistem visual, responsive layout, dan styling widget.
+- `index.html` — halaman home dan visual landing page.
+- `features.html` — halaman fitur Panda.
+- `how-it-works.html` — halaman cara kerja Panda.
+- `integrations.html` — halaman provider dan instalasi widget.
+- `docs.html` — halaman dokumentasi dan API methods.
+- `styles.css` dan `pages.css` — sistem visual, responsive layout, dan styling widget/inner pages.
 - `app.js` — interaksi landing page, widget draggable, setup provider, chat, serta adapter API.
 - `widget.js` — script embeddable standalone; tambahkan `<script src="/widget.js"></script>` di website lain atau panggil `PandaAI.init()`.
+
+Menu utama sengaja menggunakan halaman terpisah, bukan anchor satu halaman, supaya tiap informasi memiliki ruang dan URL sendiri.
