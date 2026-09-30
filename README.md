@@ -17,7 +17,8 @@ Buka `http://localhost:4173`.
 - Launcher bisa dibuka/tutup dan digeser ke posisi lain.
 - Setup screen mendukung mode demo, OpenAI/ChatGPT, Google Gemini, Anthropic Claude, dan custom OpenAI-compatible endpoint.
 - Chat panel mendukung minimize, close, quick prompt, multiline input, dan pemanggilan API langsung dari browser.
-- API key tidak ditulis ke localStorage. Untuk deployment production, gunakan server-side proxy agar key tidak terekspos di browser.
+- Menu pengaturan Panda untuk menyembunyikan launcher, mengatur opacity tombol, dan mengubah ukuran tombol floating secara live.
+- Preferensi widget disimpan lokal di browser, sedangkan API key tidak ditulis ke localStorage. Untuk deployment production, gunakan server-side proxy agar key tidak terekspos di browser.
 
 Struktur utama:
 

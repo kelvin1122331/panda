@@ -50,6 +50,16 @@
             <div class="powered-by">PANDA AI · YOUR MODEL, YOUR CONTROL</div>
           </form>
         </div>
+        <div class="widget-screen settings-screen widget-hidden" id="settings-screen">
+          <div class="settings-intro"><div class="settings-kicker"><span>⚙</span> PREFERENCES</div><h2>Atur Panda-mu.</h2><p>Sesuaikan tampilan Panda agar pas dengan alur kerja dan ruang di layarmu.</p></div>
+          <div class="settings-list">
+            <div class="setting-row setting-toggle-row"><span class="setting-icon">◉</span><span class="setting-copy"><strong>Sembunyikan Panda</strong><small>Launcher disembunyikan saat panel ditutup.</small></span><label class="switch"><input id="hide-launcher" type="checkbox" /><span></span></label></div>
+            <div class="setting-row setting-range-row"><span class="setting-icon">◐</span><span class="setting-copy"><strong>Opacity tombol</strong><small>Atur seberapa transparan floating button.</small><div class="range-line"><input id="launcher-opacity" type="range" min="40" max="100" step="1" value="100" /><output id="opacity-value">100%</output></div></span></div>
+            <div class="setting-row setting-range-row"><span class="setting-icon">↗</span><span class="setting-copy"><strong>Ukuran tombol</strong><small>Buat Panda lebih kecil atau lebih mudah ditekan.</small><div class="range-line"><input id="launcher-size" type="range" min="48" max="86" step="1" value="63" /><output id="size-value">63 px</output></div></span></div>
+          </div>
+          <div class="settings-tip"><span>✦</span><p>Pengaturan ini berlaku langsung di halaman ini dan tersimpan di browser-mu.</p></div>
+          <div class="settings-actions"><button class="settings-back" id="settings-back" type="button">← Kembali ke chat</button><button class="settings-reset" id="settings-reset" type="button">Reset</button></div>
+        </div>
         <div class="widget-screen chat-screen widget-hidden" id="chat-screen">
           <div class="message-list" id="message-list" aria-live="polite"></div>
           <div class="quick-prompts" id="quick-prompts"><button class="quick-prompt" type="button">Ringkas teks ini</button><button class="quick-prompt" type="button">Bantu brainstorm</button><button class="quick-prompt" type="button">Buat lebih profesional</button></div>
@@ -63,6 +73,7 @@
   const panel = document.getElementById('panda-panel');
   const setupScreen = document.getElementById('setup-screen');
   const chatScreen = document.getElementById('chat-screen');
+  const settingsScreen = document.getElementById('settings-screen');
   const setupForm = document.getElementById('setup-form');
   const providerInput = document.getElementById('provider');
   const modelInput = document.getElementById('model');
@@ -77,6 +88,12 @@
   const sendButton = document.getElementById('send-button');
   const widgetStatus = document.getElementById('widget-status');
   const toast = document.getElementById('toast');
+  const settingsButton = document.getElementById('widget-settings');
+  const hideLauncherInput = document.getElementById('hide-launcher');
+  const opacityInput = document.getElementById('launcher-opacity');
+  const opacityValue = document.getElementById('opacity-value');
+  const sizeInput = document.getElementById('launcher-size');
+  const sizeValue = document.getElementById('size-value');
 
   const models = {
     demo: [['panda-demo', 'Panda Demo Brain']],
@@ -86,7 +103,32 @@
     custom: [['custom-model', 'Custom model']]
   };
   const providerNames = { demo: 'Demo mode', openai: 'OpenAI', gemini: 'Gemini', anthropic: 'Claude', custom: 'Custom API' };
-  const state = { config: null, messages: [], loading: false, wasDragged: false };
+  const defaultSettings = { hideOnClose: false, opacity: 100, size: 63 };
+  let savedSettings = {};
+  try { savedSettings = JSON.parse(localStorage.getItem('panda-settings') || '{}'); } catch { savedSettings = {}; }
+  const state = { config: null, messages: [], loading: false, wasDragged: false, settings: { ...defaultSettings, ...savedSettings } };
+
+  function saveSettings() {
+    try { localStorage.setItem('panda-settings', JSON.stringify(state.settings)); } catch { /* Storage can be blocked in private previews. */ }
+  }
+  function applyRangeFill(input) {
+    const min = Number(input.min); const max = Number(input.max); const value = Number(input.value);
+    input.style.background = `linear-gradient(to right, var(--widget-purple) 0%, var(--widget-purple) ${((value - min) / (max - min)) * 100}%, #e4e3eb ${((value - min) / (max - min)) * 100}%, #e4e3eb 100%)`;
+  }
+  function applyLauncherSettings() {
+    const settings = state.settings;
+    launcher.style.opacity = String(Number(settings.opacity) / 100);
+    launcher.style.setProperty('--launcher-size', `${Number(settings.size)}px`);
+    const faceSize = Math.round(Number(settings.size) * .73);
+    launcher.querySelector('svg').style.width = `${faceSize}px`;
+    launcher.querySelector('svg').style.height = `${faceSize}px`;
+    hideLauncherInput.checked = Boolean(settings.hideOnClose);
+    opacityInput.value = settings.opacity;
+    opacityValue.textContent = `${settings.opacity}%`;
+    sizeInput.value = settings.size;
+    sizeValue.textContent = `${settings.size} px`;
+    applyRangeFill(opacityInput); applyRangeFill(sizeInput);
+  }
 
   function populateModels(provider) {
     modelInput.innerHTML = (models[provider] || models.demo).map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
@@ -100,10 +142,13 @@
 
   function showScreen(screen) {
     const chat = screen === 'chat';
-    setupScreen.classList.toggle('widget-hidden', chat);
+    const settings = screen === 'settings';
+    setupScreen.classList.toggle('widget-hidden', chat || settings);
     chatScreen.classList.toggle('widget-hidden', !chat);
-    document.getElementById('widget-settings').style.display = chat ? 'grid' : 'none';
-    widgetStatus.innerHTML = chat ? `<i class="online-dot"></i> ${providerNames[state.config?.provider || 'demo']} · ${state.config?.model || 'ready'}` : '<i class="online-dot"></i> Siap terhubung';
+    settingsScreen.classList.toggle('widget-hidden', !settings);
+    settingsButton.style.display = chat || settings ? 'grid' : 'none';
+    if (settings) widgetStatus.innerHTML = '<i class="online-dot"></i> Pengaturan Panda';
+    else widgetStatus.innerHTML = chat ? `<i class="online-dot"></i> ${providerNames[state.config?.provider || 'demo']} · ${state.config?.model || 'ready'}` : '<i class="online-dot"></i> Siap terhubung';
   }
 
   function openPanel() {
@@ -115,9 +160,11 @@
   function closePanel() {
     panel.classList.add('widget-hidden');
     launcher.setAttribute('aria-expanded', 'false');
+    launcher.style.display = state.settings.hideOnClose ? 'none' : 'grid';
   }
   function activatePanda(open = true) {
     widget.classList.remove('widget-hidden');
+    launcher.style.display = 'grid';
     if (open) openPanel();
     else launcher.focus();
   }
@@ -241,7 +288,12 @@
     runPanda({ provider, model: modelInput.value, apiKey, endpoint });
   });
   document.getElementById('use-demo').addEventListener('click', () => { providerInput.value = 'demo'; populateModels('demo'); updateSetupError(); runPanda({ provider: 'demo', model: 'panda-demo', apiKey: '', endpoint: '' }); });
-  document.getElementById('widget-settings').addEventListener('click', () => { closePanel(); openPanel(); showScreen('setup'); });
+  settingsButton.addEventListener('click', () => { openPanel(); showScreen('settings'); });
+  document.getElementById('settings-back').addEventListener('click', () => { showScreen(state.config ? 'chat' : 'setup'); });
+  hideLauncherInput.addEventListener('change', () => { state.settings.hideOnClose = hideLauncherInput.checked; saveSettings(); });
+  opacityInput.addEventListener('input', () => { state.settings.opacity = Number(opacityInput.value); opacityValue.textContent = `${state.settings.opacity}%`; applyRangeFill(opacityInput); applyLauncherSettings(); saveSettings(); });
+  sizeInput.addEventListener('input', () => { state.settings.size = Number(sizeInput.value); sizeValue.textContent = `${state.settings.size} px`; applyRangeFill(sizeInput); applyLauncherSettings(); saveSettings(); });
+  document.getElementById('settings-reset').addEventListener('click', () => { state.settings = { ...defaultSettings }; applyLauncherSettings(); saveSettings(); });
   document.getElementById('widget-minimize').addEventListener('click', closePanel);
   document.getElementById('widget-close').addEventListener('click', closePanel);
   launcher.addEventListener('click', () => { if (!state.wasDragged) { if (panel.classList.contains('widget-hidden')) openPanel(); else closePanel(); } state.wasDragged = false; });
@@ -288,4 +340,5 @@
   document.querySelectorAll('.main-nav a').forEach(link => link.addEventListener('click', () => document.querySelector('.main-nav').classList.remove('mobile-open')));
 
   populateModels('demo');
+  applyLauncherSettings();
 })();
